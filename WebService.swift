@@ -1,6 +1,6 @@
 //
 //  WebService.swift
-//  harshsanghvi
+//  Manthan Vanani
 //
 //  Created by Manthan Vanani on 28/02/21.
 //
