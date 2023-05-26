@@ -1,0 +1,160 @@
+//
+//  FileManager.swift
+//  DayCount
+//
+//  Created by Vanani on 26/04/20.
+//  Copyright © 2020 Manthan Vanani. All rights reserved.//
+
+import UIKit
+import Foundation
+
+
+enum fileExtentions{
+    case image
+    case music
+    case document
+}
+
+
+enum fileStatus{
+    case pathError
+    case itemPresent
+    case itemMissing
+}
+
+
+class FileManagement: NSObject {
+    
+    static let sharedInstance : FileManagement = FileManagement()
+    let eventImage : String = "qrcodeImages"
+    let fileManager = FileManager.default
+    let documentsDirectory = (NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] as NSString) as String
+
+    //Func uniqueId
+
+    func getID() -> String {
+        if((UserDefaults.standard.dictionaryRepresentation()).keys.contains("sPLAYER1_NAME")){
+            let value : Int = Int(UserDefaults.standard.object(forKey: "sPLAYER1_NAME") as! String)!
+            UserDefaults.standard.set("\(value+1)", forKey: "sPLAYER1_NAME")
+            return "\(value).png"
+        }else{
+            UserDefaults.standard.set("1", forKey: "sPLAYER1_NAME")
+            return "1.png"
+        }
+    }
+
+
+
+    //Check Directory At path
+    
+    func isValidLocationForDirectory(fileName : String)->Bool{
+        let pathToDatabase = documentsDirectory.appending("/\(fileName)")
+        if FileManager().fileExists(atPath: pathToDatabase) == true{
+            return true
+        }else{
+            return false
+        }
+    }
+    
+    
+    func isValidLocationForFile(directoryName : String,fileName : String)->Bool{
+        let pathToDatabase = documentsDirectory.appending("\(directoryName)/\(fileName)")
+        if FileManager().fileExists(atPath: pathToDatabase) == true{
+            return true
+        }else{
+            return false
+        }
+    }
+    
+    
+    func getDirectoryPath(directoryName : String) -> String {
+        return documentsDirectory+"/\(directoryName)"
+    }
+    
+    func checkFileAtPath(filePath : String,fileName : String)->fileStatus{
+            if fileManager.fileExists(atPath: filePath) {
+                return .itemMissing
+            } else {
+                return .itemPresent
+            }
+    }
+    
+    func saveImageDocumentDirectory(image: UIImage, imageName: String, path : String)->String{
+        if !fileManager.fileExists(atPath: path) {
+           _ = createDirectory(name: eventImage)
+        }
+        let url = NSURL(string: path)
+        let imagePath = url!.appendingPathComponent(imageName)
+        let urlString: String = imagePath!.absoluteString
+        let imageData = image.jpegData(compressionQuality: 1.0)
+        fileManager.createFile(atPath: urlString as String, contents: imageData, attributes: nil)
+        return imageName
+    }
+    
+    func getImageFromDocumentDirectory(imageName : String, path : String) {
+        do {
+            let items = try fileManager.contentsOfDirectory(atPath: path)
+            print(items)
+        } catch {
+            print("S O M E T H I N G - W E N T  W R O N G")
+        }
+    }
+    
+        
+    func createDirectory(name : String) -> String{
+        let path = documentsDirectory+"/\(name)"
+
+        if !fileManager.fileExists(atPath: path) {
+            try! fileManager.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: nil)
+        }else{
+            print("File Exits")
+            return path
+        }
+        return path
+    }
+    
+    
+    func deleteDirectory(path : String)->Bool{
+        if fileManager.fileExists(atPath: path){
+            do{
+                try fileManager.removeItem(atPath: path)
+                return true
+            }catch{
+                return false
+            }
+        }else{
+           return true
+        }
+    }
+    
+    func replaceImage(path : String, imageName : String ,image : UIImage)->Bool{
+        if deleteDirectory(path: path){
+            _ = saveImageDocumentDirectory(image: image, imageName: imageName, path: path)
+            return true
+        }else{
+            return false
+        }
+    }
+    
+    
+    func loadImagesFromAlbum(folderName:String) -> [String]{
+
+        let nsDocumentDirectory = FileManager.SearchPathDirectory.documentDirectory
+        let nsUserDomainMask    = FileManager.SearchPathDomainMask.userDomainMask
+        let paths               = NSSearchPathForDirectoriesInDomains(nsDocumentDirectory, nsUserDomainMask, true)
+        var theItems = [String]()
+        if let dirPath          = paths.first
+        {
+            let imageURL = URL(fileURLWithPath: dirPath).appendingPathComponent(folderName)
+
+            do {
+                theItems = try FileManager.default.contentsOfDirectory(atPath: imageURL.path)
+                return theItems
+            } catch let error as NSError {
+                print(error.localizedDescription)
+                return theItems
+            }
+        }
+        return theItems
+    }
+}
